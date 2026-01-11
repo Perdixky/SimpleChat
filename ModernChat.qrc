@@ -1,0 +1,38 @@
+﻿<RCC>
+    <qresource prefix="/qt/qml/ModernChat">
+        <file alias="qmldir">qml/qmldir</file>
+        <file>qml/Main.qml</file>
+        <file>qml/theme/ThemeManager.qml</file>
+        <file>qml/components/Avatar.qml</file>
+        <file>qml/components/Badge.qml</file>
+        <file>qml/components/IconButton.qml</file>
+        <file>qml/components/SearchField.qml</file>
+        <file>qml/components/MessageBubble.qml</file>
+        <file>qml/components/MessageInput.qml</file>
+        <file>qml/components/TypingIndicator.qml</file>
+        <file>qml/components/ThemeToggle.qml</file>
+        <file>qml/pages/ConversationView.qml</file>
+        <file>qml/pages/SettingsPage.qml</file>
+        <file>qml/pages/EmptyState.qml</file>
+        <file>qml/sidebar/Sidebar.qml</file>
+        <file>qml/sidebar/ConversationList.qml</file>
+        <file>qml/sidebar/ConversationDelegate.qml</file>
+        <file>qml/sidebar/SidebarHeader.qml</file>
+        <file>qml/models/ConversationModel.qml</file>
+        <file>qml/models/MessageModel.qml</file>
+        <file>qml/models/MockData.qml</file>
+        <file>resources/icons/send.svg</file>
+        <file>resources/icons/settings.svg</file>
+        <file>resources/icons/search.svg</file>
+        <file>resources/icons/moon.svg</file>
+        <file>resources/icons/sun.svg</file>
+        <file>resources/icons/attachment.svg</file>
+        <file>resources/icons/emoji.svg</file>
+        <file>resources/icons/check.svg</file>
+        <file>resources/icons/check-double.svg</file>
+        <file>resources/icons/arrow-left.svg</file>
+        <file>resources/icons/user.svg</file>
+        <file>resources/icons/close.svg</file>
+        <file>resources/icons/menu.svg</file>
+    </qresource>
+</RCC>

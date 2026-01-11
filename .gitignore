@@ -1,0 +1,59 @@
+# Build artifacts
+/build/
+/out/
+/bin/
+/lib/
+/obj/
+/dist/
+/tmp/
+/temp/
+
+# Xmake
+.xmake/
+
+# Qt / QML
+*.qmlc
+*.jsc
+*.qmlcache
+*.qm
+moc_*.cpp
+qrc_*.cpp
+ui_*.h
+
+# Qt Creator
+*.pro.user
+*.pro.user.*
+*.qbs.user
+*.qbs.user.*
+*.qmlproject.user
+*.qmlproject.user.*
+*.creator
+*.creator.user
+*.creator.*
+
+# CMake
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+Makefile
+
+# Visual Studio / MSVC
+.vs/
+*.suo
+*.user
+*.vcxproj
+*.vcxproj.*
+*.pdb
+*.ipch
+*.obj
+*.exe
+*.dll
+*.lib
+*.exp
+
+# macOS
+.DS_Store
+*.dSYM/
+
+# Logs
+*.log

@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(dir:*)",
+      "Bash(cat:*)",
+      "WebSearch",
+      "WebFetch(domain:doc.qt.io)",
+      "WebFetch(domain:tboox.org)",
+      "WebFetch(domain:github.com)",
+      "Bash(echo:*)",
+      "Bash(cmd /c \"cd /d D:\\\\Code\\\\QML\\\\ModernChat && clangd --check=main.cpp --log=verbose 2>&1\")",
+      "Bash(powershell -Command:*)"
+    ]
+  }
+}

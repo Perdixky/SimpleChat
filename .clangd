@@ -1,0 +1,8 @@
+---
+If:
+  PathMatch: "C:/Users/32937/AppData/Local/\\.xmake/packages/.*"
+CompileFlags:
+  # 关键：让这些外部头文件也用你的工程 compilation database
+  CompilationDatabase: "D:/Code/QML/ModernChat"
+  # 兜底：即使某些时候没借到 TU，也至少是 C++23
+  Add: ["-std=c++23"]

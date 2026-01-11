@@ -1,0 +1,27 @@
+﻿module ModernChat
+
+Main 1.0 qml/Main.qml
+
+Avatar 1.0 qml/components/Avatar.qml
+Badge 1.0 qml/components/Badge.qml
+IconButton 1.0 qml/components/IconButton.qml
+SearchField 1.0 qml/components/SearchField.qml
+MessageBubble 1.0 qml/components/MessageBubble.qml
+MessageInput 1.0 qml/components/MessageInput.qml
+TypingIndicator 1.0 qml/components/TypingIndicator.qml
+ThemeToggle 1.0 qml/components/ThemeToggle.qml
+
+ConversationView 1.0 qml/pages/ConversationView.qml
+SettingsPage 1.0 qml/pages/SettingsPage.qml
+EmptyState 1.0 qml/pages/EmptyState.qml
+
+Sidebar 1.0 qml/sidebar/Sidebar.qml
+ConversationList 1.0 qml/sidebar/ConversationList.qml
+ConversationDelegate 1.0 qml/sidebar/ConversationDelegate.qml
+SidebarHeader 1.0 qml/sidebar/SidebarHeader.qml
+
+ConversationModel 1.0 qml/models/ConversationModel.qml
+MessageModel 1.0 qml/models/MessageModel.qml
+
+singleton ThemeManager 1.0 qml/theme/ThemeManager.qml
+singleton MockData 1.0 qml/models/MockData.qml
