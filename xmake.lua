@@ -24,6 +24,8 @@ add_requires("qt6base", "stdexec-git", "libolm", "libquotient", "qtkeychain", "o
 target("SimpleChat")
     add_rules("my.qt.quickapp")
     add_files("main.cpp")
+    add_files("src/**/*.cpp")
+    add_files("include/**/*.hpp")
     add_files("ModernChat.qrc")
     add_includedirs("include")
 
@@ -35,6 +37,9 @@ target("SimpleChat")
         add_defines("Q_OS_ANDROID")
         add_syslinks("log", "android")
         set_values("qt.android.package_source_dir", "$(projectdir)/android")
+    elseif is_plat("linux") then
+        -- qtkeychain (libsecret backend) needs these system libs explicitly when linking static libs
+        add_syslinks("secret-1", "gio-2.0", "gobject-2.0", "glib-2.0")
     elseif is_plat("windows") then
         set_kind("binary")
         add_links("Qt6EntryPointd")
@@ -92,6 +97,8 @@ package("libolm")
   add_deps("cmake")
 
   on_install("windows", "linux", "macosx", "mingw", "msys", function(package)
+    io.gsub("include/olm/list.hh", "T %* const other_pos", "T * other_pos")
+
     if package:has_tool("cxx", "cl") then
       package:add("cxxflags", "/Zc:__cplusplus", "/Zc:preprocessor")
     end

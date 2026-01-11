@@ -14,6 +14,7 @@
         <file>qml/pages/ConversationView.qml</file>
         <file>qml/pages/SettingsPage.qml</file>
         <file>qml/pages/EmptyState.qml</file>
+        <file>qml/pages/LoginPage.qml</file>
         <file>qml/sidebar/Sidebar.qml</file>
         <file>qml/sidebar/ConversationList.qml</file>
         <file>qml/sidebar/ConversationDelegate.qml</file>

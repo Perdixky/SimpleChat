@@ -13,9 +13,20 @@
 #include <type_traits>
 #include <utility>
 
-// stdexec
+// stdexec (temporarily hide Qt's emit macro to avoid clashes)
+#ifdef emit
+  #pragma push_macro("emit")
+  #undef emit
+  #define ASYNC_RESTORE_EMIT
+#endif
+
 #include <stdexec/concepts.hpp>
 #include <stdexec/execution.hpp>
+
+#ifdef ASYNC_RESTORE_EMIT
+  #pragma pop_macro("emit")
+  #undef ASYNC_RESTORE_EMIT
+#endif
 
 namespace Async {
 

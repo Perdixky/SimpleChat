@@ -1,18 +1,12 @@
 #include <QDebug>
 #include <QGuiApplication>
 #include <QQmlApplicationEngine>
+#include <QQmlContext>
 #include <QQuickStyle>
 #include <QQuickWindow>
 
-#include <Async/QtStdexec.hpp>
-
+#include "Logic/Login.hpp"
 #include <Quotient/connection.h>
-
-#ifndef Q_OS_ANDROID
-#include <QDateTime>
-#include <QFile>
-#include <QTextStream>
-#endif
 
 using namespace Qt::StringLiterals;
 //
@@ -122,37 +116,74 @@ using namespace Qt::StringLiterals;
 // }
 
 auto main(int argc, char **argv) -> int {
-  QCoreApplication app(argc, argv);
-  qSetMessagePattern("[%{time hh:mm:ss.zzz}] %{type} | "
-                     "%{file}:%{line} - %{message}");
+    QGuiApplication app(argc, argv);
 
-  Quotient::Connection conn(&app);
+    app.setOrganizationName("SimpleChat");
+    app.setApplicationName("Simple Chat");
+    app.setApplicationVersion("1.0.0");
 
-  const stdexec::sender auto connect_sender =
-      Async::qObjectAsSender(&conn, &Quotient::Connection::connected,
-                             &Quotient::Connection::resolveError,
-                             &Quotient::Connection::loginError) |
-      stdexec::then([&]() noexcept {
-        qInfo() << "Connected.";
-        QCoreApplication::quit();
-      }) |
-      stdexec::let_error(
-          [&](const auto &error) { // 有错就直接用另一个 sender 退出
-            auto dbg = qFatal();
-            dbg << "Connection failed.";
-            std::apply(
-                [&](const auto &...args) {
-                  ((dbg.noquote() << "Error details:" << args), ...);
-                },
-                error);
+    QQuickStyle::setStyle("Basic");
 
-            return stdexec::just();
-          });
+    QQuickWindow::setDefaultAlphaBuffer(true);
 
-  stdexec::start_detached(connect_sender);
+    // 在 main 中创建 Connection，生命周期由 main 管理
+    Quotient::Connection connection;
 
-  conn.loginWithPassword("@perdixky:chat.neboer.site", "264819691Az",
-                         "ModernChat");
+    // 创建 LoginManager，传入 Connection 指针
+    Login loginManager(&connection);
 
-  return app.exec();
+    QQmlApplicationEngine engine;
+
+    // 将 LoginManager 暴露给 QML
+    engine.rootContext()->setContextProperty("LoginManager", &loginManager);
+
+    QObject::connect(
+        &engine, &QQmlApplicationEngine::objectCreationFailed, &app,
+        []() { QCoreApplication::exit(-1); }, Qt::QueuedConnection);
+
+    const QUrl url(u"qrc:/qt/qml/ModernChat/qml/Main.qml"_s);
+    engine.load(url);
+
+    if (engine.rootObjects().isEmpty()) {
+        return -1;
+    }
+
+    return app.exec();
 }
+
+// 原有的控制台测试代码（已注释）
+// auto main(int argc, char **argv) -> int {
+//   QCoreApplication app(argc, argv);
+//   qSetMessagePattern("[%{time hh:mm:ss.zzz}] %{type} | "
+//                      "%{file}:%{line} - %{message}");
+//
+//   Quotient::Connection conn(&app);
+//
+//   const stdexec::sender auto connect_sender =
+//       Async::qObjectAsSender(&conn, &Quotient::Connection::connected,
+//                              &Quotient::Connection::resolveError,
+//                              &Quotient::Connection::loginError) |
+//       stdexec::then([&]() noexcept {
+//         qInfo() << "Connected.";
+//         QCoreApplication::quit();
+//       }) |
+//       stdexec::let_error(
+//           [&](const auto &error) { // 有错就直接用另一个 sender 退出
+//             auto dbg = qFatal();
+//             dbg << "Connection failed.";
+//             std::apply(
+//                 [&](const auto &...args) {
+//                   ((dbg.noquote() << "Error details:" << args), ...);
+//                 },
+//                 error);
+//
+//             return stdexec::just();
+//           });
+//
+//   stdexec::start_detached(connect_sender);
+//
+//   conn.loginWithPassword("@perdixky:chat.neboer.site", "264819691Az",
+//                          "ModernChat");
+//
+//   return app.exec();
+// }

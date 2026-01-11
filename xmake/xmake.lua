@@ -8,7 +8,7 @@ rule("my.qt.quickapp")
     end)
 
     on_config(function (target)
-        import("load")(target, {gui = true, frameworks = {"QtQuickControls2", "QtQuickEffects", "QtSql", "QtGui", "QtQuick", "QtQml", "QtCore", "QtNetwork"}})
+        import("load")(target, {gui = true, frameworks = {"QtQuickControls2", "QtQuickEffects", "QtSql", "QtGui", "QtQuick", "QtQml", "QtCore", "QtNetwork", "QtDBus"}})
     end)
 
     -- deploy application

@@ -17,6 +17,9 @@ ApplicationWindow {
     visible: true
     title: qsTr("Modern Chat")
 
+    // 登录状态
+    property bool isLoggedIn: false
+
     // 平台检测
     readonly property bool isAndroid: Qt.platform.os === "android"
     readonly property bool isDesktop: !isAndroid
@@ -276,11 +279,38 @@ ApplicationWindow {
                 }
             }
 
-            // 主内容
-            RowLayout {
+            // 主内容 - 根据登录状态显示不同页面
+            Loader {
                 Layout.fillWidth: true
                 Layout.fillHeight: true
-                spacing: 0
+                sourceComponent: root.isLoggedIn ? chatContentComponent : loginPageComponent
+            }
+
+            Component {
+                id: loginPageComponent
+                LoginPage {
+                    onLoginRequested: (server, username, password) => {
+                        LoginManager.login(server, username, password)
+                    }
+                    onCreateAccountRequested: {
+                        // TODO: 实现创建账户逻辑
+                        console.log("Create account requested")
+                    }
+                }
+            }
+
+            // 监听登录结果
+            Connections {
+                target: LoginManager
+                function onLoginSuccess() {
+                    root.isLoggedIn = true
+                }
+            }
+
+            Component {
+                id: chatContentComponent
+                RowLayout {
+                    spacing: 0
 
         // Sidebar
         Sidebar {
@@ -373,6 +403,7 @@ ApplicationWindow {
             ]
         }
         }
+            }
         }
     }
 
