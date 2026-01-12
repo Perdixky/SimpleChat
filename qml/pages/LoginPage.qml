@@ -251,11 +251,11 @@ Item {
             // 错误信息显示
             Label {
                 Layout.fillWidth: true
-                text: LoginManager.errorMessage
+                text: login.errorMessage
                 font.pixelSize: 13
                 color: "#ef4444"
                 wrapMode: Text.WordWrap
-                visible: LoginManager.errorMessage !== ""
+                visible: login.errorMessage !== ""
                 horizontalAlignment: Text.AlignHCenter
 
                 Behavior on opacity {
@@ -269,9 +269,9 @@ Item {
                 Layout.fillWidth: true
                 height: 48
                 radius: 12
-                color: LoginManager.isLoading ? ThemeManager.textMuted :
+                color: login.isLoading ? ThemeManager.textMuted :
                        (loginButtonArea.containsMouse ? ThemeManager.accentHover : ThemeManager.accent)
-                enabled: !LoginManager.isLoading
+                enabled: !login.isLoading
 
                 signal clicked()
 
@@ -286,12 +286,12 @@ Item {
                     BusyIndicator {
                         width: 20
                         height: 20
-                        running: LoginManager.isLoading
-                        visible: LoginManager.isLoading
+                        running: login.isLoading
+                        visible: login.isLoading
                     }
 
                     Label {
-                        text: LoginManager.isLoading ? qsTr("登录中...") : qsTr("登录")
+                        text: login.isLoading ? qsTr("登录中...") : qsTr("登录")
                         font.pixelSize: 16
                         font.weight: Font.Medium
                         color: "#ffffff"
@@ -302,16 +302,16 @@ Item {
                     id: loginButtonArea
                     anchors.fill: parent
                     hoverEnabled: true
-                    cursorShape: LoginManager.isLoading ? Qt.BusyCursor : Qt.PointingHandCursor
+                    cursorShape: login.isLoading ? Qt.BusyCursor : Qt.PointingHandCursor
                     onClicked: {
-                        if (!LoginManager.isLoading) {
+                        if (!login.isLoading) {
                             loginButton.clicked()
-                            root.loginRequested(root.homeServer, usernameField.text, passwordField.text)
+                            login.loginRequest(root.homeServer, usernameField.text, passwordField.text)
                         }
                     }
                 }
 
-                scale: loginButtonArea.pressed && !LoginManager.isLoading ? 0.98 : 1
+                scale: loginButtonArea.pressed && !login.isLoading ? 0.98 : 1
 
                 Behavior on scale {
                     NumberAnimation { duration: 100; easing.type: Easing.OutCubic }

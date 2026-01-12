@@ -289,9 +289,6 @@ ApplicationWindow {
             Component {
                 id: loginPageComponent
                 LoginPage {
-                    onLoginRequested: (server, username, password) => {
-                        LoginManager.login(server, username, password)
-                    }
                     onCreateAccountRequested: {
                         // TODO: 实现创建账户逻辑
                         console.log("Create account requested")
@@ -301,8 +298,8 @@ ApplicationWindow {
 
             // 监听登录结果
             Connections {
-                target: LoginManager
-                function onLoginSuccess() {
+                target: login
+                function onLoginSucceeded() {
                     root.isLoggedIn = true
                 }
             }

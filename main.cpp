@@ -5,10 +5,85 @@
 #include <QQuickStyle>
 #include <QQuickWindow>
 
+#include "Async/QtStdexec.hpp"
+#include <stdexec/execution.hpp>
+#include <exec/repeat_effect_until.hpp>
 #include "Logic/Login.hpp"
+#include "Logic/Sync.hpp"
 #include <Quotient/connection.h>
 
+#ifdef Q_OS_WIN
+#include <Windows.h>
+#endif
+
 using namespace Qt::StringLiterals;
+
+#if defined(Q_OS_WIN) && !defined(NDEBUG)
+static void coloredMessageHandler(QtMsgType type,
+                                  const QMessageLogContext &context,
+                                  const QString &msg) {
+  HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
+  const char *prefix;
+  WORD color;
+
+  switch (type) {
+  case QtDebugMsg:
+    prefix = "[DEBUG]";
+    color = FOREGROUND_GREEN | FOREGROUND_BLUE; // Cyan
+    break;
+  case QtInfoMsg:
+    prefix = "[INFO]";
+    color = FOREGROUND_GREEN; // Green
+    break;
+  case QtWarningMsg:
+    prefix = "[WARN]";
+    color = FOREGROUND_RED | FOREGROUND_GREEN; // Yellow
+    break;
+  case QtCriticalMsg:
+    prefix = "[CRITICAL]";
+    color = FOREGROUND_RED; // Red
+    break;
+  case QtFatalMsg:
+    prefix = "[FATAL]";
+    color = FOREGROUND_RED | FOREGROUND_INTENSITY; // Bright Red
+    break;
+  }
+
+  SetConsoleTextAttribute(hConsole, color | FOREGROUND_INTENSITY);
+  fprintf(stderr, "%s ", prefix);
+  SetConsoleTextAttribute(hConsole,
+                          FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE);
+
+  QString location;
+  if (context.file) {
+    location = QString(" (%1:%2)").arg(context.file).arg(context.line);
+  }
+  fprintf(stderr, "%s%s\n", msg.toLocal8Bit().constData(),
+          location.toLocal8Bit().constData());
+
+  if (type == QtFatalMsg) {
+    abort();
+  }
+}
+
+static void attachConsole() {
+  if (AllocConsole()) {
+    FILE *stream;
+    freopen_s(&stream, "CONOUT$", "w", stdout);
+    freopen_s(&stream, "CONOUT$", "w", stderr);
+    freopen_s(&stream, "CONIN$", "r", stdin);
+
+    // Enable ANSI escape sequences (Windows 10+)
+    HANDLE hOut = GetStdHandle(STD_OUTPUT_HANDLE);
+    DWORD dwMode = 0;
+    GetConsoleMode(hOut, &dwMode);
+    SetConsoleMode(hOut, dwMode | ENABLE_VIRTUAL_TERMINAL_PROCESSING);
+
+    qInstallMessageHandler(coloredMessageHandler);
+    qInfo() << "Debug console attached.";
+  }
+}
+#endif
 //
 // #ifndef Q_OS_ANDROID
 // void logToFile(const QString &msg) {
@@ -116,39 +191,50 @@ using namespace Qt::StringLiterals;
 // }
 
 auto main(int argc, char **argv) -> int {
-    QGuiApplication app(argc, argv);
+#if defined(Q_OS_WIN) && !defined(NDEBUG)
+  attachConsole();
+#endif
 
-    app.setOrganizationName("SimpleChat");
-    app.setApplicationName("Simple Chat");
-    app.setApplicationVersion("1.0.0");
+  QGuiApplication app(argc, argv);
 
-    QQuickStyle::setStyle("Basic");
+  app.setOrganizationName("SimpleChat");
+  app.setApplicationName("Simple Chat");
+  app.setApplicationVersion("1.0.0");
 
-    QQuickWindow::setDefaultAlphaBuffer(true);
+  QQuickStyle::setStyle("Basic");
 
-    // 在 main 中创建 Connection，生命周期由 main 管理
-    Quotient::Connection connection;
+  QQuickWindow::setDefaultAlphaBuffer(true);
 
-    // 创建 LoginManager，传入 Connection 指针
-    Login loginManager(&connection);
+  Quotient::Connection connection;
 
-    QQmlApplicationEngine engine;
+  Login login(&connection);
 
-    // 将 LoginManager 暴露给 QML
-    engine.rootContext()->setContextProperty("LoginManager", &loginManager);
+  QQmlApplicationEngine engine;
 
-    QObject::connect(
-        &engine, &QQmlApplicationEngine::objectCreationFailed, &app,
-        []() { QCoreApplication::exit(-1); }, Qt::QueuedConnection);
+  engine.rootContext()->setContextProperty("login", &login);
 
-    const QUrl url(u"qrc:/qt/qml/ModernChat/qml/Main.qml"_s);
-    engine.load(url);
+  QObject::connect(
+      &engine, &QQmlApplicationEngine::objectCreationFailed, &app,
+      []() { QCoreApplication::exit(-1); }, Qt::AutoConnection);
 
-    if (engine.rootObjects().isEmpty()) {
-        return -1;
-    }
+  const QUrl url(u"qrc:/qt/qml/ModernChat/qml/Main.qml"_s);
+  engine.load(url);
 
-    return app.exec();
+  if (engine.rootObjects().isEmpty()) {
+    return -1;
+  }
+
+  const stdexec::sender auto login_sender =
+      Async::qObjectAsSender(&login, &Login::loginRequested) |
+      stdexec::let_value([&](const QStringView server,
+                             const QStringView username,
+                             const QStringView password) {
+        return login.login(server, username, password);
+      });
+
+  stdexec::start_detached(login_sender);
+
+  return app.exec();
 }
 
 // 原有的控制台测试代码（已注释）

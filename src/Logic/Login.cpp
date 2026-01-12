@@ -21,39 +21,3 @@ void Login::setErrorMessage(const QString &message) {
   }
 }
 
-void Login::login(const QString &server, const QString &username,
-                  const QString &password) {
-  namespace ex = stdexec;
-  const ex::sender auto sender =
-      ex::just(server, username, password) |
-      ex::let_value([this](const QString &server, const QString &username,
-                           const QString &password) {
-        qDebug() << "Starting login to" << server << "as" << username;
-        setIsLoading(true);
-        return Async::qObjectAsSender(conn_ptr_,
-                                      &Quotient::Connection::connected,
-                                      &Quotient::Connection::resolveError,
-                                      &Quotient::Connection::loginError) |
-               ex::then([this]() noexcept {
-                 qInfo() << "Login succeeded";
-                 emit loginSucceeded();
-                 setIsLoading(false);
-                 return true;
-               }) |
-               ex::upon_error([this](const auto &error) noexcept {
-                 setIsLoading(false);
-                 QStringList errorDetails;
-                 std::apply(
-                     [&](const auto &...args) {
-                       ((errorDetails << args), ...);
-                     },
-                     error);
-                 const QString fullErrorMessage =
-                     u"Login failed. Details: %1"_s.arg(
-                         errorDetails.join(u"; "_s));
-                 setErrorMessage(fullErrorMessage);
-                 emit loginFailed(fullErrorMessage);
-                 return false;
-               });
-      });
-}
