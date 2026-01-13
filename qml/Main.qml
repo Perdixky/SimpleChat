@@ -39,6 +39,7 @@ ApplicationWindow {
     readonly property real safeAreaRight: isAndroid ? SafeArea.margins.right : 0
 
     property string currentConversationId: ""
+    property var currentRoom: null
 
     Rectangle {
         id: windowMask
@@ -317,8 +318,9 @@ ApplicationWindow {
             visible: !root.isMobile || root.currentConversationId === ""
             currentConversationId: root.currentConversationId
 
-            onConversationSelected: (id) => {
+            onConversationSelected: (id, room) => {
                 root.currentConversationId = id
+                root.currentRoom = room
             }
 
             onSettingsClicked: {
@@ -361,8 +363,10 @@ ApplicationWindow {
                 id: conversationViewComponent
                 ConversationView {
                     conversationId: root.currentConversationId
+                    currentRoom: root.currentRoom
                     onBackClicked: {
                         root.currentConversationId = ""
+                        root.currentRoom = null
                     }
                 }
             }

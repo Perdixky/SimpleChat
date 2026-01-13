@@ -9,30 +9,29 @@ ListView {
     property string currentConversationId: ""
     property string searchText: ""
 
-    signal conversationSelected(string id)
+    signal conversationSelected(string id, var room)
 
     clip: true
     boundsBehavior: Flickable.StopAtBounds
 
-    model: ConversationModel {
-        id: conversationModel
-    }
-
-    onSearchTextChanged: {
-        if (searchText === "") {
-            conversationModel.loadConversations()
-        } else {
-            conversationModel.filterByName(searchText)
-        }
-    }
+    model: roomList
 
     delegate: ConversationDelegate {
+        required property var room
+        required property string displayName
+        required property string lastMessage
+        required property var lastMessageTime
+        required property int unreadCount
+
+        conversationId: room ? room.roomId : ""
+        name: displayName
+        avatar: ""  // TODO: 从 room 获取头像
+        isOnline: connection.isOnline
         isSelected: root.currentConversationId !== "" && root.currentConversationId === conversationId
 
         onSelected: (id) => {
             root.currentConversationId = id
-            conversationModel.markAsRead(id)
-            root.conversationSelected(id)
+            root.conversationSelected(id, room)
         }
     }
 

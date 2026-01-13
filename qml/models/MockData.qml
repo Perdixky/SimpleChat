@@ -270,23 +270,39 @@ QtObject {
     }
 
     function formatTime(date) {
-        if (!date || !(date instanceof Date) || isNaN(date.getTime())) {
+        if (!date) {
             return ""
         }
+
+        let jsDate = date
+        if (typeof date === "number") {
+            jsDate = new Date(date)
+        } else if (!(date instanceof Date)) {
+            if (date.toMSecsSinceEpoch) {
+                jsDate = new Date(date.toMSecsSinceEpoch())
+            } else {
+                return ""
+            }
+        }
+
+        if (isNaN(jsDate.getTime())) {
+            return ""
+        }
+
         const now = new Date()
-        const diff = now - date
+        const diff = now - jsDate
         const minutes = Math.floor(diff / 60000)
         const hours = Math.floor(diff / 3600000)
         const days = Math.floor(diff / 86400000)
 
         if (minutes < 1) return qsTr("Just now")
         if (minutes < 60) return minutes + qsTr(" min ago")
-        if (hours < 24) return Qt.formatTime(date, "hh:mm")
+        if (hours < 24) return Qt.formatTime(jsDate, "hh:mm")
         if (days < 7) {
             const weekdays = [qsTr("Sun"), qsTr("Mon"), qsTr("Tue"), qsTr("Wed"), qsTr("Thu"), qsTr("Fri"), qsTr("Sat")]
-            return weekdays[date.getDay()]
+            return weekdays[jsDate.getDay()]
         }
-        return Qt.formatDate(date, "MM/dd")
+        return Qt.formatDate(jsDate, "MM/dd")
     }
 
     function formatMessageTime(date) {

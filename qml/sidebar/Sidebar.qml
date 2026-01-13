@@ -7,7 +7,7 @@ Rectangle {
 
     property alias currentConversationId: conversationList.currentConversationId
 
-    signal conversationSelected(string id)
+    signal conversationSelected(string id, var room)
     signal settingsClicked()
 
     color: ThemeManager.background
@@ -32,8 +32,8 @@ Rectangle {
             Layout.fillHeight: true
             searchText: header.searchText
 
-            onConversationSelected: (id) => {
-                root.conversationSelected(id)
+            onConversationSelected: (id, room) => {
+                root.conversationSelected(id, room)
             }
         }
     }

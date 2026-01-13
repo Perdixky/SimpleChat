@@ -13,6 +13,9 @@ qt_standard_project_setup(REQUIRES 6.5)
 
 qt_add_executable(ModernChat
     main.cpp
+    src/Logic/Login.cpp
+    src/Logic/RoomUtils.cpp
+    src/Utils/LogHandler.cpp
 )
 
 set_source_files_properties(qml/theme/ThemeManager.qml PROPERTIES
@@ -71,6 +74,10 @@ target_link_libraries(ModernChat PRIVATE
     Qt6::Quick
     Qt6::QuickControls2
     Qt6::QuickEffects
+)
+
+target_include_directories(ModernChat PRIVATE
+    include
 )
 
 if(WIN32)

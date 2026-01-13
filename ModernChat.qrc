@@ -8,6 +8,7 @@
         <file>qml/components/IconButton.qml</file>
         <file>qml/components/SearchField.qml</file>
         <file>qml/components/MessageBubble.qml</file>
+        <file>qml/components/SystemMessage.qml</file>
         <file>qml/components/MessageInput.qml</file>
         <file>qml/components/TypingIndicator.qml</file>
         <file>qml/components/ThemeToggle.qml</file>
@@ -19,7 +20,6 @@
         <file>qml/sidebar/ConversationList.qml</file>
         <file>qml/sidebar/ConversationDelegate.qml</file>
         <file>qml/sidebar/SidebarHeader.qml</file>
-        <file>qml/models/ConversationModel.qml</file>
         <file>qml/models/MessageModel.qml</file>
         <file>qml/models/MockData.qml</file>
         <file>resources/icons/send.svg</file>

@@ -3,7 +3,6 @@
 #include "Async/QtStdexec.hpp"
 #include <QObject>
 #include <Quotient/connection.h>
-#include <exec/repeat_effect_until.hpp>
 #include <stdexec/execution.hpp>
 
 class Login : public QObject {
@@ -57,8 +56,7 @@ public:
                    emit loginFailed(fullErrorMessage);
                    return false;
                  });
-        }) |
-        exec::repeat_effect_until();
+        });
     return sender;
   }
 

@@ -10,6 +10,7 @@ Item {
     required property string timestamp
     required property bool isSent
     property int status: 0  // 0: sending, 1: sent, 2: delivered, 3: read
+    property string senderName: ""
 
     implicitWidth: parent ? parent.width : 300
     implicitHeight: bubble.height + 8
@@ -78,6 +79,14 @@ Item {
                 margins: 12
             }
             spacing: 4
+
+            Label {
+                visible: !root.isSent && root.senderName !== ""
+                text: root.senderName
+                color: ThemeManager.accent
+                font.pixelSize: 12
+                font.weight: Font.DemiBold
+            }
 
             Label {
                 Layout.fillWidth: true

@@ -2,88 +2,22 @@
 #include <QGuiApplication>
 #include <QQmlApplicationEngine>
 #include <QQmlContext>
+#include <QQmlEngine>
 #include <QQuickStyle>
 #include <QQuickWindow>
 
 #include "Async/QtStdexec.hpp"
-#include <stdexec/execution.hpp>
-#include <exec/repeat_effect_until.hpp>
 #include "Logic/Login.hpp"
+#include "Logic/Room.hpp"
+#include "Logic/RoomList.hpp"
 #include "Logic/Sync.hpp"
+#include "Utils/LogHandler.hpp"
 #include <Quotient/connection.h>
-
-#ifdef Q_OS_WIN
-#include <Windows.h>
-#endif
+#include <Quotient/quotient_common.h>
+#include <exec/repeat_effect_until.hpp>
+#include <stdexec/execution.hpp>
 
 using namespace Qt::StringLiterals;
-
-#if defined(Q_OS_WIN) && !defined(NDEBUG)
-static void coloredMessageHandler(QtMsgType type,
-                                  const QMessageLogContext &context,
-                                  const QString &msg) {
-  HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
-  const char *prefix;
-  WORD color;
-
-  switch (type) {
-  case QtDebugMsg:
-    prefix = "[DEBUG]";
-    color = FOREGROUND_GREEN | FOREGROUND_BLUE; // Cyan
-    break;
-  case QtInfoMsg:
-    prefix = "[INFO]";
-    color = FOREGROUND_GREEN; // Green
-    break;
-  case QtWarningMsg:
-    prefix = "[WARN]";
-    color = FOREGROUND_RED | FOREGROUND_GREEN; // Yellow
-    break;
-  case QtCriticalMsg:
-    prefix = "[CRITICAL]";
-    color = FOREGROUND_RED; // Red
-    break;
-  case QtFatalMsg:
-    prefix = "[FATAL]";
-    color = FOREGROUND_RED | FOREGROUND_INTENSITY; // Bright Red
-    break;
-  }
-
-  SetConsoleTextAttribute(hConsole, color | FOREGROUND_INTENSITY);
-  fprintf(stderr, "%s ", prefix);
-  SetConsoleTextAttribute(hConsole,
-                          FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE);
-
-  QString location;
-  if (context.file) {
-    location = QString(" (%1:%2)").arg(context.file).arg(context.line);
-  }
-  fprintf(stderr, "%s%s\n", msg.toLocal8Bit().constData(),
-          location.toLocal8Bit().constData());
-
-  if (type == QtFatalMsg) {
-    abort();
-  }
-}
-
-static void attachConsole() {
-  if (AllocConsole()) {
-    FILE *stream;
-    freopen_s(&stream, "CONOUT$", "w", stdout);
-    freopen_s(&stream, "CONOUT$", "w", stderr);
-    freopen_s(&stream, "CONIN$", "r", stdin);
-
-    // Enable ANSI escape sequences (Windows 10+)
-    HANDLE hOut = GetStdHandle(STD_OUTPUT_HANDLE);
-    DWORD dwMode = 0;
-    GetConsoleMode(hOut, &dwMode);
-    SetConsoleMode(hOut, dwMode | ENABLE_VIRTUAL_TERMINAL_PROCESSING);
-
-    qInstallMessageHandler(coloredMessageHandler);
-    qInfo() << "Debug console attached.";
-  }
-}
-#endif
 //
 // #ifndef Q_OS_ANDROID
 // void logToFile(const QString &msg) {
@@ -191,9 +125,7 @@ static void attachConsole() {
 // }
 
 auto main(int argc, char **argv) -> int {
-#if defined(Q_OS_WIN) && !defined(NDEBUG)
-  attachConsole();
-#endif
+  LogHandler::install();
 
   QGuiApplication app(argc, argv);
 
@@ -208,10 +140,19 @@ auto main(int argc, char **argv) -> int {
   Quotient::Connection connection;
 
   Login login(&connection);
+  Sync sync(&connection);
+  RoomList roomList(&connection);
 
   QQmlApplicationEngine engine;
 
+  qmlRegisterUncreatableMetaObject(Quotient::staticMetaObject, "Quotient", 1, 0,
+                                   "Quotient", "Enums only");
+  qmlRegisterUncreatableMetaObject(EventEnums::staticMetaObject, "ModernChat",
+                                   1, 0, "EventEnums", "Enums only");
+
   engine.rootContext()->setContextProperty("login", &login);
+  engine.rootContext()->setContextProperty("connection", &connection);
+  engine.rootContext()->setContextProperty("roomList", &roomList);
 
   QObject::connect(
       &engine, &QQmlApplicationEngine::objectCreationFailed, &app,
@@ -224,13 +165,28 @@ auto main(int argc, char **argv) -> int {
     return -1;
   }
 
+  auto timer = QTimer();
+
   const stdexec::sender auto login_sender =
       Async::qObjectAsSender(&login, &Login::loginRequested) |
       stdexec::let_value([&](const QStringView server,
                              const QStringView username,
-                             const QStringView password) {
+                             const QStringView password) noexcept {
         return login.login(server, username, password);
+      }) |
+      exec::repeat_effect_until() | stdexec::let_value([&]() noexcept {
+        roomList.setConnection(&connection);
+        return sync.sync() | exec::repeat_effect_until();
+      }) |
+      stdexec::then([&]() noexcept { sync.setFirstSyncDone(true); }) |
+      stdexec::let_value([&]() noexcept {
+        return sync.sync() | stdexec::let_value([&](const bool) {
+                 return Async::qObjectAsSender(&timer, &QTimer::timeout);
+               }) |
+               exec::repeat_effect();
       });
+
+  timer.start(300);
 
   stdexec::start_detached(login_sender);
 

@@ -9,7 +9,7 @@ Rectangle {
     id: root
 
     property string conversationId: ""
-    property var conversation: null
+    property var currentRoom: null
     property bool showTypingIndicator: false
 
     signal backClicked()
@@ -18,18 +18,6 @@ Rectangle {
 
     Behavior on color {
         ColorAnimation { duration: ThemeManager.transitionDuration }
-    }
-
-    onConversationIdChanged: {
-        if (root.conversationId !== "") {
-            conversation = MockData.getConversation(root.conversationId)
-            messageModel.loadMessages(root.conversationId)
-            messageList.positionViewAtEnd()
-        }
-    }
-
-    MessageModel {
-        id: messageModel
     }
 
     ColumnLayout {
@@ -62,9 +50,9 @@ Rectangle {
 
                 Avatar {
                     size: 40
-                    source: root.conversation ? root.conversation.avatar : ""
-                    name: root.conversation ? root.conversation.name : ""
-                    isOnline: root.conversation ? root.conversation.isOnline : false
+                    source: ""
+                    name: root.currentRoom ? root.currentRoom.displayName : ""
+                    isOnline: connection.isOnline
                 }
 
                 ColumnLayout {
@@ -72,7 +60,7 @@ Rectangle {
                     spacing: 2
 
                     Label {
-                        text: root.conversation ? root.conversation.name : ""
+                        text: root.currentRoom ? root.currentRoom.displayName : ""
                         font.pixelSize: 16
                         font.weight: Font.DemiBold
                         color: ThemeManager.textPrimary
@@ -86,13 +74,13 @@ Rectangle {
                     Label {
                         text: {
                             if (root.showTypingIndicator) return qsTr("typing...")
-                            if (root.conversation && root.conversation.isOnline) return qsTr("Online")
+                            if (connection.isOnline) return qsTr("Online")
                             return qsTr("Offline")
                         }
                         font.pixelSize: 12
                         color: {
                             if (root.showTypingIndicator) return ThemeManager.accent
-                            if (root.conversation && root.conversation.isOnline) return ThemeManager.online
+                            if (connection.isOnline) return ThemeManager.online
                             return ThemeManager.textMuted
                         }
 
@@ -138,26 +126,71 @@ Rectangle {
             spacing: 4
             boundsBehavior: Flickable.StopAtBounds
 
-            model: messageModel.model
+            model: root.currentRoom
 
             delegate: Item {
                 id: msgDelegate
                 required property int index
-                required property string content
-                required property var timestamp
-                required property bool isSent
-                required property int status
+                required property var event
 
                 width: messageList.width
-                height: bubble.height
+                height: msgDelegate.showDelegate ? contentLoader.implicitHeight : 0
+                visible: msgDelegate.showDelegate
 
-                MessageBubble {
-                    id: bubble
+                readonly property bool isNotice: msgDelegate.event.type === EventEnums.Message
+                                                   && msgDelegate.event.message.msgType === EventEnums.MsgType.Notice
+                readonly property bool isState: msgDelegate.event.type === EventEnums.State
+                readonly property string systemText: {
+                    if (msgDelegate.isNotice) return msgDelegate.event.message.plainBody
+                    if (msgDelegate.isState) return msgDelegate.event.state.summary
+                    return ""
+                }
+                readonly property bool showSystem: msgDelegate.systemText !== ""
+                readonly property bool showBubble: !msgDelegate.showSystem
+                                                   && (msgDelegate.event.type === EventEnums.Message
+                                                       || msgDelegate.event.type === EventEnums.Sticker)
+                readonly property bool showDelegate: msgDelegate.showSystem || msgDelegate.showBubble
+
+                Loader {
+                    id: contentLoader
                     width: parent.width
-                    content: msgDelegate.content
-                    timestamp: msgDelegate.timestamp ? MockData.formatMessageTime(msgDelegate.timestamp) : ""
-                    isSent: msgDelegate.isSent
-                    status: msgDelegate.status
+                    sourceComponent: msgDelegate.showSystem
+                                     ? systemMessageComponent
+                                     : (msgDelegate.showBubble ? bubbleComponent : null)
+                }
+
+                Component {
+                    id: systemMessageComponent
+
+                    SystemMessage {
+                        width: msgDelegate.width
+                        content: msgDelegate.systemText
+                    }
+                }
+
+                Component {
+                    id: bubbleComponent
+
+                    MessageBubble {
+                        width: msgDelegate.width
+                        content: {
+                            if (msgDelegate.event.type === EventEnums.Message)
+                                return msgDelegate.event.message.plainBody
+                            if (msgDelegate.event.type === EventEnums.Sticker)
+                                return msgDelegate.event.sticker.body
+                            return ""
+                        }
+                        timestamp: formatTime(msgDelegate.event.timestamp)
+                        isSent: msgDelegate.event.sender === connection.userId
+                        status: 2  // delivered
+                        senderName: msgDelegate.event.senderDisplayName
+
+                        function formatTime(dateTime) {
+                            if (!dateTime) return ""
+                            const date = new Date(dateTime)
+                            return date.toLocaleTimeString(Qt.locale(), "hh:mm")
+                        }
+                    }
                 }
             }
 
@@ -227,32 +260,11 @@ Rectangle {
                 }
 
                 onMessageSent: (message) => {
-                    messageModel.sendMessage(message)
-
-                    // Simulate typing response
-                    root.showTypingIndicator = true
-                    responseTimer.start()
+                    if (root.conversationId !== "") {
+                        roomList.sendMessage(root.conversationId, message)
+                    }
                 }
             }
-        }
-    }
-
-    Timer {
-        id: responseTimer
-        interval: 2000
-        onTriggered: {
-            root.showTypingIndicator = false
-
-            // Simulate receiving a response
-            const responses = [
-                "That's interesting!",
-                "I see what you mean.",
-                "Let me think about that...",
-                "Great point!",
-                "Thanks for sharing!"
-            ]
-            const randomResponse = responses[Math.floor(Math.random() * responses.length)]
-            messageModel.receiveMessage(randomResponse)
         }
     }
 }

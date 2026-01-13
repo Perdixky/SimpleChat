@@ -8,13 +8,13 @@ ItemDelegate {
     id: root
 
     required property int index
-    required property string conversationId
-    required property string name
-    required property string avatar
-    required property string lastMessage
-    required property var lastMessageTime
-    required property int unreadCount
-    required property bool isOnline
+    property string conversationId: ""
+    property string name: ""
+    property string avatar: ""
+    property string lastMessage: ""
+    property var lastMessageTime: null
+    property int unreadCount: 0
+    property bool isOnline: false
     property bool isSelected: false
 
     signal selected(string id)
@@ -88,12 +88,30 @@ ItemDelegate {
                 }
 
                 Label {
-                    text: root.lastMessageTime ? MockData.formatTime(root.lastMessageTime) : ""
+                    text: root.lastMessageTime ? formatTime(root.lastMessageTime) : ""
                     font.pixelSize: 12
                     color: root.unreadCount > 0 ? ThemeManager.accent : ThemeManager.textMuted
 
                     Behavior on color {
                         ColorAnimation { duration: ThemeManager.transitionDuration }
+                    }
+
+                    function formatTime(dateTime) {
+                        if (!dateTime) return ""
+                        const now = new Date()
+                        const date = new Date(dateTime)
+                        const diffMs = now - date
+                        const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24))
+
+                        if (diffDays === 0) {
+                            return date.toLocaleTimeString(Qt.locale(), "hh:mm")
+                        } else if (diffDays === 1) {
+                            return qsTr("Yesterday")
+                        } else if (diffDays < 7) {
+                            return date.toLocaleDateString(Qt.locale(), "ddd")
+                        } else {
+                            return date.toLocaleDateString(Qt.locale(), "MM/dd")
+                        }
                     }
                 }
             }
